@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import {
   Package, Truck, MapPin, BarChart2, Settings, HelpCircle,
   Plus, Clock, Wallet, Home, Menu, X, ChevronRight,
@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import {
   loginUser,
+  registerUser,
   fetchShipments,
   createShipment as createShipmentApi,
   fetchTracking,
@@ -25,9 +26,9 @@ import {
   fetchAnalyticsVolume
 } from "./api.js";
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // DESIGN TOKENS
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const C = {
   navy: "#0A2540",
   green: "#00C853",
@@ -42,9 +43,9 @@ const C = {
   orangeDim: "#FF6D0020",
 };
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // MOCK DATA
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const MERCHANTS = [
   { id: 1, name: "Zawadi Boutique", type: "Fashion", location: "Westlands", avatar: "ZB" },
   { id: 2, name: "TechZone Kenya", type: "Electronics", location: "CBD", avatar: "TZ" },
@@ -74,12 +75,12 @@ const STATUS_COLORS = {
 };
 
 const ACTIVE_DELIVERIES = [
-  { id: "SWP-2025-847291", customer: "Wanjiku Kamau", status: "In Transit", eta: "14 min", geo: "SW-NRB-4829", cod: 2400 },
-  { id: "SWP-2025-334820", customer: "Otieno Ochieng", status: "Picked Up", eta: "32 min", geo: "SW-NRB-7731", cod: 8500 },
-  { id: "SWP-2025-991043", customer: "Amina Hassan", status: "At Pata Point", eta: "Awaiting", geo: "SW-NRB-2204", cod: 1200 },
-  { id: "SWP-2025-556677", customer: "Brian Mutuku", status: "Delivered", eta: "Done", geo: "SW-NRB-5512", cod: 4350 },
-  { id: "SWP-2025-223344", customer: "Faith Njeri", status: "In Transit", eta: "22 min", geo: "SW-NRB-3318", cod: 15000 },
-  { id: "SWP-2025-778899", customer: "David Kipchoge", status: "Picked Up", eta: "45 min", geo: "SW-NRB-9901", cod: 6750 },
+  { id: "SWP-2025-847291", customer: "Wanjiku Kamau", status: "In Transit", eta: new Date(Date.now() + 14 * 60 * 1000).toISOString(), geo: "SW-NRB-4829", cod: 2400 },
+  { id: "SWP-2025-334820", customer: "Otieno Ochieng", status: "Picked Up", eta: new Date(Date.now() + 32 * 60 * 1000).toISOString(), geo: "SW-NRB-7731", cod: 8500 },
+  { id: "SWP-2025-991043", customer: "Amina Hassan", status: "At Pata Point", eta: null, geo: "SW-NRB-2204", cod: 1200 },
+  { id: "SWP-2025-556677", customer: "Brian Mutuku", status: "Delivered", eta: new Date(Date.now() - 5 * 60 * 1000).toISOString(), geo: "SW-NRB-5512", cod: 4350 },
+  { id: "SWP-2025-223344", customer: "Faith Njeri", status: "In Transit", eta: new Date(Date.now() + 22 * 60 * 1000).toISOString(), geo: "SW-NRB-3318", cod: 15000 },
+  { id: "SWP-2025-778899", customer: "David Kipchoge", status: "Picked Up", eta: new Date(Date.now() + 45 * 60 * 1000).toISOString(), geo: "SW-NRB-9901", cod: 6750 },
 ];
 
 const VOLUME_DATA = Array.from({ length: 30 }, (_, i) => ({
@@ -121,21 +122,23 @@ const PATA_DONE = [
 ];
 
 const TESTIMONIALS = [
-  { name: "Zawadi Ouma", biz: "Zawadi Boutique", estate: "Westlands", rating: 5, quote: "Went from 35% failed deliveries to under 3%. My customers keep coming back now because they actually receive their orders.", metric: "Failure rate: 35% → 2.8%" },
+  { name: "Zawadi Ouma", biz: "Zawadi Boutique", estate: "Westlands", rating: 5, quote: "Went from 35% failed deliveries to under 3%. My customers keep coming back now because they actually receive their orders.", metric: "Failure rate: 35% â†’ 2.8%" },
   { name: "Kevin Njoroge", biz: "TechZone Kenya", estate: "CBD", rating: 5, quote: "The COD escrow is a game changer. Zero cash fraud since we switched. The dashboard alone is worth every shilling.", metric: "COD fraud: eliminated" },
   { name: "Amani Waweru", biz: "FreshBox Organics", estate: "Kilimani", rating: 5, quote: "90-minute delivery for fresh produce was impossible before SwiftPath. Now it's our daily reality.", metric: "Avg delivery: 87 min" },
 ];
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // GLOBAL STATE / APP
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function App() {
   const [page, setPage] = useState("landing");
   const [dark, setDark] = useState(true);
   const [trackCode, setTrackCode] = useState("");
   const [auth, setAuth] = useState({ user: null, token: null });
-  const [authForm, setAuthForm] = useState({ email: "merchant@swiftpath.ke", password: "password123" });
+  const [authForm, setAuthForm] = useState({ email: "", password: "" });
   const [authError, setAuthError] = useState("");
+  const [registerForm, setRegisterForm] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [registerError, setRegisterError] = useState("");
   const [shipments, setShipments] = useState(ACTIVE_DELIVERIES);
   const [pataPoints, setPataPoints] = useState(PATA_PARCELS);
   const [analyticsData, setAnalyticsData] = useState({
@@ -207,6 +210,27 @@ export default function App() {
     }
   };
 
+  const handleRegister = async () => {
+    setRegisterError("");
+    const { name, email, password, confirm } = registerForm;
+    if (!name || !email || !password) return setRegisterError("All fields are required.");
+    if (password !== confirm) return setRegisterError("Passwords do not match.");
+    if (password.length < 6) return setRegisterError("Password must be at least 6 characters.");
+    setBusy(true);
+    try {
+      const { user, token } = await registerUser(name, email, password);
+      const saved = { user, token };
+      setAuth(saved);
+      localStorage.setItem("swiftpath_auth", JSON.stringify(saved));
+      await loadAppData(token);
+      setPage("dashboard");
+    } catch (error) {
+      setRegisterError(error.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("swiftpath_auth");
     setAuth({ user: null, token: null });
@@ -220,6 +244,30 @@ export default function App() {
       revenue: REV_DATA,
     });
   };
+
+  // ETA formatting helper
+  function formatEtaLabel(etaIso, status) {
+    if (!etaIso) return "Pending";
+    if (status === "Delivered") return "Delivered";
+    const target = Date.parse(etaIso);
+    if (isNaN(target)) return "Pending";
+    const diff = Math.floor((target - Date.now()) / 1000);
+    if (diff <= 0) return "Delivered";
+    const mins = Math.floor(diff / 60);
+    const secs = diff % 60;
+    if (mins > 0) return `${mins}m ${secs}s`;
+    return `${secs}s`;
+  }
+
+  // Live ETA ticker — updates `etaLabel` on each shipment every second
+  useEffect(() => {
+    const tick = () => {
+      setShipments(prev => prev.map(s => ({ ...s, etaLabel: formatEtaLabel(s.eta, s.status) })));
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const theme = {
     dark,
@@ -255,7 +303,7 @@ export default function App() {
       `}</style>
 
       {page === "landing" && <Landing nav={nav} theme={theme} dark={dark} setDark={setDark} />}
-      {page === "dashboard" && <Dashboard nav={nav} theme={theme} dark={dark} setDark={setDark} auth={auth} authForm={authForm} setAuthForm={setAuthForm} authError={authError} onLogin={handleLogin} onLogout={handleLogout} shipments={shipments} busy={busy} />}
+      {page === "dashboard" && <Dashboard nav={nav} theme={theme} dark={dark} setDark={setDark} auth={auth} authForm={authForm} setAuthForm={setAuthForm} authError={authError} onLogin={handleLogin} onLogout={handleLogout} shipments={shipments} busy={busy} registerForm={registerForm} setRegisterForm={setRegisterForm} registerError={registerError} onRegister={handleRegister} />}
       {page === "create" && <CreateShipment nav={nav} theme={theme} dark={dark} auth={auth} createShipmentApi={createShipmentApi} onRefresh={loadAppData} busy={busy} />}
       {page === "track" && <TrackParcel nav={nav} theme={theme} dark={dark} code={trackCode} onTrack={fetchTracking} trackResult={trackResult} setTrackResult={setTrackResult} trackingError={trackingError} setTrackingError={setTrackingError} />}
       {page === "patapoint" && <PataPointPortal nav={nav} theme={theme} dark={dark} auth={auth} pataPoints={pataPoints} onCollect={collectParcel} busy={busy} />}
@@ -264,9 +312,9 @@ export default function App() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // LANDING PAGE
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Landing({ nav, theme, dark, setDark }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [coverageQuery, setCoverageQuery] = useState("");
@@ -321,17 +369,17 @@ function Landing({ nav, theme, dark, setDark }) {
             <div className="ticker-wrap">
               <div className="ticker-inner" style={{ fontSize: 13, color: theme.sub }}>
                 {[
-                  "📦 12,847 parcels delivered today",
-                  "✅ 98.2% success rate",
-                  "📍 2,000 Pata Points nationwide",
-                  "⚡ 87min average delivery",
-                  "🛵 Electric fleet · Zero emissions",
-                  "💚 KES 0 COD fraud this month",
-                  "📦 12,847 parcels delivered today",
-                  "✅ 98.2% success rate",
-                  "📍 2,000 Pata Points nationwide",
-                  "⚡ 87min average delivery",
-                ].join("   ·   ")}
+                  "ðŸ“¦ 12,847 parcels delivered today",
+                  "âœ… 98.2% success rate",
+                  "ðŸ“ 2,000 Pata Points nationwide",
+                  "âš¡ 87min average delivery",
+                  "ðŸ›µ Electric fleet Â· Zero emissions",
+                  "ðŸ’š KES 0 COD fraud this month",
+                  "ðŸ“¦ 12,847 parcels delivered today",
+                  "âœ… 98.2% success rate",
+                  "ðŸ“ 2,000 Pata Points nationwide",
+                  "âš¡ 87min average delivery",
+                ].join("   Â·   ")}
               </div>
             </div>
           </div>
@@ -347,7 +395,7 @@ function Landing({ nav, theme, dark, setDark }) {
       <section style={{ background: dark ? "#080E1A" : C.navy, padding: "80px 24px" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", textAlign: "center" }}>
           <h2 style={{ fontSize: "clamp(26px,4vw,40px)", fontWeight: 700, color: "#fff", marginBottom: 16 }}>
-            30–40% of deliveries in Kenya fail.
+            30â€“40% of deliveries in Kenya fail.
             <span style={{ color: C.green }}> Not anymore.</span>
           </h2>
           <p style={{ color: "#7A9BB5", fontSize: 17, marginBottom: 52 }}>Three structural problems. Three SwiftPath solutions.</p>
@@ -360,8 +408,8 @@ function Landing({ nav, theme, dark, setDark }) {
               <div key={i} className="fade-in" style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 16, padding: 28, textAlign: "left", animationDelay: `${i * .1}s` }}>
                 <div style={{ width: 52, height: 52, borderRadius: 14, background: C.orangeDim, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>{item.icon}</div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: C.green, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>{item.tag}</div>
-                <h3 style={{ color: "#fff", fontWeight: 600, marginBottom: 10, fontSize: 17 }}>❌ {item.problem}</h3>
-                <p style={{ color: "#7A9BB5", lineHeight: 1.6, fontSize: 14 }}>✓ {item.solution}</p>
+                <h3 style={{ color: "#fff", fontWeight: 600, marginBottom: 10, fontSize: 17 }}>âŒ {item.problem}</h3>
+                <p style={{ color: "#7A9BB5", lineHeight: 1.6, fontSize: 14 }}>âœ“ {item.solution}</p>
               </div>
             ))}
           </div>
@@ -379,7 +427,7 @@ function Landing({ nav, theme, dark, setDark }) {
             { n: "01", icon: <Plus size={24} />, title: "Merchant Creates Order", desc: "List your parcel on the SwiftPath dashboard in under 60 seconds" },
             { n: "02", icon: <MapPin size={24} />, title: "Geo-Address Assigned", desc: "AI assigns a unique SW-NRB code to the customer's exact location" },
             { n: "03", icon: <Truck size={24} />, title: "Rider Picks Up", desc: "Electric rider collects from sorting hub and heads to customer" },
-            { n: "04", icon: <CheckCircle size={24} />, title: "Delivered ✓", desc: "To the door or Pata Point — confirmed via M-Pesa COD escrow" },
+            { n: "04", icon: <CheckCircle size={24} />, title: "Delivered âœ“", desc: "To the door or Pata Point â€” confirmed via M-Pesa COD escrow" },
           ].map((step, i) => (
             <div key={i} style={{ padding: "28px 24px", position: "relative", textAlign: "center" }}>
               {i < 3 && <div style={{ position: "absolute", top: 52, right: -1, width: "100%", height: 2, background: `linear-gradient(90deg,${C.green}40,transparent)`, zIndex: 0 }} />}
@@ -427,7 +475,7 @@ function Landing({ nav, theme, dark, setDark }) {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "center" }}>
           <div>
             <h2 style={{ fontSize: "clamp(26px,4vw,38px)", fontWeight: 700, color: theme.text, marginBottom: 16 }}>Covering All of Nairobi</h2>
-            <p style={{ color: theme.sub, fontSize: 16, lineHeight: 1.7, marginBottom: 28 }}>From Westlands to Rongai, Kasarani to Karen — our electric fleet and Pata Points network covers every corner of Nairobi and expanding.</p>
+            <p style={{ color: theme.sub, fontSize: 16, lineHeight: 1.7, marginBottom: 28 }}>From Westlands to Rongai, Kasarani to Karen â€” our electric fleet and Pata Points network covers every corner of Nairobi and expanding.</p>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 24 }}>
               {["Westlands","Kilimani","Kasarani","South B","Karen","Eastleigh","Lang'ata","Rongai","Ruaka","Thika Rd"].map(e => (
                 <span key={e} style={{ background: C.greenDim, color: C.green, padding: "4px 12px", borderRadius: 100, fontSize: 13, fontWeight: 500 }}>{e}</span>
@@ -437,7 +485,7 @@ function Landing({ nav, theme, dark, setDark }) {
               <input value={coverageQuery} onChange={e => setCoverageQuery(e.target.value)} placeholder="Enter your estate..." style={{ flex: 1, background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 10, padding: "10px 14px", color: theme.text, fontSize: 14 }} />
               <Btn variant="primary" theme={theme} onClick={() => {}}>Check</Btn>
             </div>
-            {coverageQuery.length > 2 && <p style={{ color: C.green, fontSize: 13, marginTop: 8 }}>✓ We deliver to {coverageQuery}! Start shipping today.</p>}
+            {coverageQuery.length > 2 && <p style={{ color: C.green, fontSize: 13, marginTop: 8 }}>âœ“ We deliver to {coverageQuery}! Start shipping today.</p>}
           </div>
           <CoverageMapSVG dark={dark} />
         </div>
@@ -478,13 +526,13 @@ function Landing({ nav, theme, dark, setDark }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 20, maxWidth: 820, margin: "0 auto" }}>
           {[
             { tier: "Standard", time: "24 hours", price: "150", desc: "Reliable next-day delivery across Nairobi", featured: false },
-            { tier: "Express", time: "Same-day, 6hrs", price: "300", desc: "Our most popular tier — delivered today", featured: true },
+            { tier: "Express", time: "Same-day, 6hrs", price: "300", desc: "Our most popular tier â€” delivered today", featured: true },
             { tier: "Premium", time: "2 hours", price: "450", desc: "Urgent deliveries, guaranteed 2-hour window", featured: false },
           ].map((p, i) => (
             <div key={i} style={{ background: p.featured ? `linear-gradient(135deg,${C.navy},#0D3060)` : theme.card, border: p.featured ? `2px solid ${C.green}` : `1px solid ${theme.border}`, borderRadius: 20, padding: 28, position: "relative" }}>
               {p.featured && <div style={{ position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)", background: C.green, color: C.navy, fontSize: 11, fontWeight: 700, padding: "4px 14px", borderRadius: 100, letterSpacing: 1 }}>MOST POPULAR</div>}
               <div style={{ fontSize: 13, fontWeight: 600, color: p.featured ? C.green : theme.sub, marginBottom: 8 }}>{p.tier}</div>
-              <div style={{ fontSize: 13, color: p.featured ? "#7ABBD4" : theme.sub, marginBottom: 16 }}>⏱ {p.time}</div>
+              <div style={{ fontSize: 13, color: p.featured ? "#7ABBD4" : theme.sub, marginBottom: 16 }}>â± {p.time}</div>
               <div style={{ fontSize: 42, fontWeight: 700, color: p.featured ? "#fff" : theme.text, marginBottom: 4 }}>KES {p.price}</div>
               <div style={{ fontSize: 13, color: p.featured ? "#7ABBD4" : theme.sub, marginBottom: 20 }}>per parcel</div>
               <p style={{ fontSize: 13, color: p.featured ? "#A8C8E0" : theme.sub, lineHeight: 1.6, marginBottom: 24 }}>{p.desc}</p>
@@ -497,10 +545,10 @@ function Landing({ nav, theme, dark, setDark }) {
       {/* PATA POINT CTA */}
       <section style={{ padding: "80px 24px", background: `linear-gradient(135deg,${C.navy} 0%,#0D3060 100%)` }}>
         <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🏪</div>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>ðŸª</div>
           <h2 style={{ fontSize: "clamp(26px,4vw,38px)", fontWeight: 700, color: "#fff", marginBottom: 16 }}>Earn Extra Income.<br />Become a Pata Point.</h2>
           <p style={{ color: "#7ABBD4", fontSize: 17, lineHeight: 1.7, marginBottom: 12 }}>Already running a duka, pharmacy, or M-Pesa business?</p>
-          <p style={{ color: "#A8C8E0", fontSize: 16, marginBottom: 36 }}>Earn <strong style={{ color: C.green }}>KES 10–30 per parcel</strong> collected at your shop. No new equipment needed. Just a shelf and a willingness to help your community.</p>
+          <p style={{ color: "#A8C8E0", fontSize: 16, marginBottom: 36 }}>Earn <strong style={{ color: C.green }}>KES 10â€“30 per parcel</strong> collected at your shop. No new equipment needed. Just a shelf and a willingness to help your community.</p>
           <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
             <Btn variant="primary" theme={theme} large onClick={() => nav("patapoint")}>Register as a Pata Point Agent</Btn>
             <Btn variant="ghost" theme={theme} large onClick={() => {}}>Learn More</Btn>
@@ -532,8 +580,8 @@ function Landing({ nav, theme, dark, setDark }) {
             ))}
           </div>
           <div style={{ borderTop: "1px solid rgba(255,255,255,.08)", paddingTop: 24, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
-            <span style={{ fontSize: 13 }}>Nairobi, Kenya 🇰🇪 · © 2025 SwiftPath Logistics</span>
-            <span style={{ fontSize: 13 }}>Built with ⚡ for Kenya</span>
+            <span style={{ fontSize: 13 }}>Nairobi, Kenya ðŸ‡°ðŸ‡ª Â· Â© 2025 SwiftPath Logistics</span>
+            <span style={{ fontSize: 13 }}>Built with âš¡ for Kenya</span>
           </div>
         </div>
       </footer>
@@ -541,30 +589,94 @@ function Landing({ nav, theme, dark, setDark }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // MERCHANT DASHBOARD
-// ─────────────────────────────────────────────────────────────
-function Dashboard({ nav, theme, dark, setDark, auth, authForm, setAuthForm, authError, onLogin, onLogout, shipments, busy }) {
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function Dashboard({ nav, theme, dark, setDark, auth, authForm, setAuthForm, authError, onLogin, onLogout, shipments, busy, registerForm, setRegisterForm, registerError, onRegister }) {
   const [activePage, setActivePage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [authTab, setAuthTab] = useState("login");
 
   if (!auth?.user) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: theme.bg }}>
-        <div style={{ width: "100%", maxWidth: 460, background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 20, padding: 32 }}>
-          <h2 style={{ fontSize: 24, marginBottom: 16, color: theme.text }}>Merchant Login</h2>
-          <p style={{ color: theme.sub, marginBottom: 24 }}>Sign in to access your SwiftPath dashboard and shipments.</p>
-          <div style={{ display: "grid", gap: 14 }}>
-            <input value={authForm.email} onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))} placeholder="Email" style={{ width: "100%", background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: 12, padding: "12px 14px", color: theme.text, fontSize: 14 }} />
-            <input type="password" value={authForm.password} onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))} placeholder="Password" style={{ width: "100%", background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: 12, padding: "12px 14px", color: theme.text, fontSize: 14 }} />
-            {authError && <div style={{ color: C.orange, fontSize: 13 }}>{authError}</div>}
-            <Btn variant="primary" theme={theme} onClick={onLogin} large disabled={busy}>{busy ? "Signing in…" : "Sign In"}</Btn>
-            <div style={{ fontSize: 13, color: theme.sub }}>Use merchant@swiftpath.ke / password123</div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16 }}>
-              <span style={{ fontSize: 13, color: theme.sub }}>Not a merchant yet?</span>
-              <button onClick={() => nav("landing")} style={{ background: "transparent", border: "none", color: C.green, fontWeight: 700, cursor: "pointer" }}>Back to home</button>
+        <div style={{ width: "100%", maxWidth: 460, background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 20, padding: 32 }} className="fade-in">
+          {/* Logo */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 28 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg,${C.green},#00E676)`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Navigation size={18} color="#fff" />
             </div>
+            <span style={{ fontWeight: 700, fontSize: 20, color: theme.text }}>Swift<span style={{ color: C.green }}>Path</span></span>
           </div>
+
+          {/* Tabs */}
+          <div style={{ display: "flex", background: theme.bg, borderRadius: 12, padding: 4, marginBottom: 28, border: `1px solid ${theme.border}` }}>
+            {["login", "signup"].map(tab => (
+              <button key={tab} onClick={() => setAuthTab(tab)}
+                style={{ flex: 1, padding: "9px 0", borderRadius: 9, fontWeight: 600, fontSize: 14, border: "none", cursor: "pointer", transition: "all .2s",
+                  background: authTab === tab ? C.green : "transparent",
+                  color: authTab === tab ? "#fff" : theme.sub }}>
+                {tab === "login" ? "Sign In" : "Create Account"}
+              </button>
+            ))}
+          </div>
+
+          {authTab === "login" ? (
+            <div style={{ display: "grid", gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: theme.sub, marginBottom: 6, display: "block", textTransform: "uppercase", letterSpacing: .5 }}>Email</label>
+                <input value={authForm.email} onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))}
+                  placeholder="you@example.com"
+                  style={{ width: "100%", background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: 12, padding: "12px 14px", color: theme.text, fontSize: 14 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: theme.sub, marginBottom: 6, display: "block", textTransform: "uppercase", letterSpacing: .5 }}>Password</label>
+                <input type="password" value={authForm.password} onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))}
+                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                  onKeyDown={e => e.key === "Enter" && onLogin()}
+                  style={{ width: "100%", background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: 12, padding: "12px 14px", color: theme.text, fontSize: 14 }} />
+              </div>
+              {authError && <div style={{ color: C.orange, fontSize: 13, background: `${C.orange}15`, padding: "10px 14px", borderRadius: 10 }}>âš  {authError}</div>}
+              <Btn variant="primary" theme={theme} onClick={onLogin} large disabled={busy}>{busy ? "Signing in…" : "Sign In"}</Btn>
+              <div style={{ height: 12 }} />
+              <div style={{ textAlign: "center", marginTop: 8 }}>
+                <button onClick={() => nav("landing")} style={{ background: "transparent", border: "none", color: theme.sub, fontSize: 13, cursor: "pointer" }}>â† Back to home</button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 14 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: theme.sub, marginBottom: 6, display: "block", textTransform: "uppercase", letterSpacing: .5 }}>Business Name</label>
+                <input value={registerForm.name} onChange={e => setRegisterForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="e.g. Zawadi Boutique"
+                  style={{ width: "100%", background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: 12, padding: "12px 14px", color: theme.text, fontSize: 14 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: theme.sub, marginBottom: 6, display: "block", textTransform: "uppercase", letterSpacing: .5 }}>Email</label>
+                <input value={registerForm.email} onChange={e => setRegisterForm(f => ({ ...f, email: e.target.value }))}
+                  placeholder="you@example.com"
+                  style={{ width: "100%", background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: 12, padding: "12px 14px", color: theme.text, fontSize: 14 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: theme.sub, marginBottom: 6, display: "block", textTransform: "uppercase", letterSpacing: .5 }}>Password</label>
+                <input type="password" value={registerForm.password} onChange={e => setRegisterForm(f => ({ ...f, password: e.target.value }))}
+                  placeholder="Min. 6 characters"
+                  style={{ width: "100%", background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: 12, padding: "12px 14px", color: theme.text, fontSize: 14 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: theme.sub, marginBottom: 6, display: "block", textTransform: "uppercase", letterSpacing: .5 }}>Confirm Password</label>
+                <input type="password" value={registerForm.confirm} onChange={e => setRegisterForm(f => ({ ...f, confirm: e.target.value }))}
+                  placeholder="Repeat password"
+                  onKeyDown={e => e.key === "Enter" && onRegister()}
+                  style={{ width: "100%", background: theme.bg, border: `1px solid ${theme.border}`, borderRadius: 12, padding: "12px 14px", color: theme.text, fontSize: 14 }} />
+              </div>
+              {registerError && <div style={{ color: C.orange, fontSize: 13, background: `${C.orange}15`, padding: "10px 14px", borderRadius: 10 }}>âš  {registerError}</div>}
+              <Btn variant="primary" theme={theme} onClick={onRegister} large disabled={busy}>{busy ? "Creating accountâ€¦" : "Create Account"}</Btn>
+              <div style={{ textAlign: "center" }}>
+                <button onClick={() => nav("landing")} style={{ background: "transparent", border: "none", color: theme.sub, fontSize: 13, cursor: "pointer" }}>â† Back to home</button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -619,7 +731,7 @@ function Dashboard({ nav, theme, dark, setDark, auth, authForm, setAuthForm, aut
         <div style={{ background: theme.card, borderBottom: `1px solid ${theme.border}`, padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button onClick={() => nav("landing")} style={{ background: "none", border: `1px solid ${theme.border}`, borderRadius: 10, padding: "8px 10px", color: theme.sub, cursor: "pointer", fontSize: 13 }}>
-              ← Home
+              â† Home
             </button>
             <div style={{ fontSize: 16, fontWeight: 600, color: theme.text }}>Merchant Dashboard</div>
           </div>
@@ -640,9 +752,9 @@ function Dashboard({ nav, theme, dark, setDark, auth, authForm, setAuthForm, aut
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 16, marginBottom: 24 }}>
             {[
               { label: "Today's Parcels", value: "147", delta: "+12%", deltaUp: true, icon: <Package size={20} />, color: C.green },
-              { label: "Success Rate", value: "98.2%", delta: "↑ 2.1% this week", deltaUp: true, icon: <Target size={20} />, color: C.green },
+              { label: "Success Rate", value: "98.2%", delta: "â†‘ 2.1% this week", deltaUp: true, icon: <Target size={20} />, color: C.green },
               { label: "COD Pending", value: "KES 34,500", delta: "Settles in 6 hrs", deltaUp: null, icon: <Wallet size={20} />, color: C.orange },
-              { label: "Avg Delivery Time", value: "87 min", delta: "Target: 90 min ✓", deltaUp: true, icon: <Clock size={20} />, color: C.green },
+              { label: "Avg Delivery Time", value: "87 min", delta: "Target: 90 min âœ“", deltaUp: true, icon: <Clock size={20} />, color: C.green },
             ].map((k, i) => (
               <div key={i} className="fade-in" style={{ background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 14, padding: 20, animationDelay: `${i*.07}s` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
@@ -662,7 +774,7 @@ function Dashboard({ nav, theme, dark, setDark, auth, authForm, setAuthForm, aut
               <div style={{ background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 16, overflow: "hidden" }}>
                 <div style={{ padding: "16px 20px", borderBottom: `1px solid ${theme.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontWeight: 600, color: theme.text }}>Live Delivery Map</span>
-                  <span style={{ fontSize: 12, color: C.green, fontWeight: 600 }}>● 23 active riders</span>
+                  <span style={{ fontSize: 12, color: C.green, fontWeight: 600 }}>â— 23 active riders</span>
                 </div>
                 <DashboardMapSVG dark={dark} />
               </div>
@@ -696,7 +808,7 @@ function Dashboard({ nav, theme, dark, setDark, auth, authForm, setAuthForm, aut
                             <td style={{ padding: "12px 16px" }}>
                               <span style={{ background: sc.bg, color: sc.text, padding: "3px 10px", borderRadius: 100, fontSize: 11, fontWeight: 600 }}>{d.status}</span>
                             </td>
-                            <td style={{ padding: "12px 16px", fontSize: 13, color: theme.sub }}>{d.eta || "Pending"}</td>
+                            <td style={{ padding: "12px 16px", fontSize: 13, color: theme.sub }}>{d.etaLabel || "Pending"}</td>
                             <td style={{ padding: "12px 16px", fontFamily: "JetBrains Mono, monospace", fontSize: 12, color: theme.sub }}>{geoAddress}</td>
                             <td style={{ padding: "12px 16px", fontSize: 13, fontWeight: 600, color: theme.text }}>KES {Number(d.codAmount || d.cod || 0).toLocaleString()}</td>
                           </tr>
@@ -768,9 +880,9 @@ function Dashboard({ nav, theme, dark, setDark, auth, authForm, setAuthForm, aut
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // CREATE SHIPMENT WIZARD
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function CreateShipment({ nav, theme, dark, auth, createShipmentApi, onRefresh, busy }) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({ name: "", phone: "", geo: "", estate: "", pref: "door", item: "", category: "Fashion", weight: 1, fragile: false, highValue: false, value: "", tier: "express", payment: "cod", notes: "", schedule: "now" });
@@ -860,7 +972,7 @@ function CreateShipment({ nav, theme, dark, auth, createShipmentApi, onRefresh, 
         {/* HEADER */}
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}>
           <button onClick={() => nav("dashboard")} style={{ background: "none", border: `1px solid ${theme.border}`, borderRadius: 8, padding: "8px 12px", color: theme.sub, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
-            ← Back
+            â† Back
           </button>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: theme.text }}>Create Shipment</h1>
@@ -897,7 +1009,7 @@ function CreateShipment({ nav, theme, dark, auth, createShipmentApi, onRefresh, 
                 <div>
                   <label style={{ fontSize: 13, fontWeight: 600, color: theme.sub, display: "block", marginBottom: 8 }}>Delivery Preference</label>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                    {[{ id: "door", label: "🚪 Door Delivery", desc: "Rider delivers to address" }, { id: "pata", label: "📍 Pata Point", desc: "Customer collects nearby" }].map(opt => (
+                    {[{ id: "door", label: "ðŸšª Door Delivery", desc: "Rider delivers to address" }, { id: "pata", label: "ðŸ“ Pata Point", desc: "Customer collects nearby" }].map(opt => (
                       <div key={opt.id} onClick={() => up("pref", opt.id)} style={{ border: `2px solid ${form.pref === opt.id ? C.green : theme.border}`, borderRadius: 12, padding: "14px 16px", cursor: "pointer", background: form.pref === opt.id ? C.greenDim : "transparent" }}>
                         <div style={{ fontWeight: 600, fontSize: 14, color: theme.text, marginBottom: 4 }}>{opt.label}</div>
                         <div style={{ fontSize: 12, color: theme.sub }}>{opt.desc}</div>
@@ -925,9 +1037,9 @@ function CreateShipment({ nav, theme, dark, auth, createShipmentApi, onRefresh, 
                   <input type="range" min={0.1} max={30} step={0.1} value={form.weight} onChange={e => up("weight", +e.target.value)} style={{ width: "100%", accentColor: C.green }} />
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: theme.sub, marginTop: 4 }}><span>0.1 kg</span><span>30 kg</span></div>
                 </div>
-                <FormField label="Parcel Value (KES) — for COD" value={form.value} onChange={v => up("value", v)} placeholder="e.g. 2400" theme={theme} type="number" />
+                <FormField label="Parcel Value (KES) â€” for COD" value={form.value} onChange={v => up("value", v)} placeholder="e.g. 2400" theme={theme} type="number" />
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  {[{ key: "fragile", label: "🥚 Fragile Item", desc: "Handle with care" }, { key: "highValue", label: "💎 High Value", desc: "Additional insurance" }].map(t => (
+                  {[{ key: "fragile", label: "ðŸ¥š Fragile Item", desc: "Handle with care" }, { key: "highValue", label: "ðŸ’Ž High Value", desc: "Additional insurance" }].map(t => (
                     <div key={t.key} onClick={() => up(t.key, !form[t.key])} style={{ border: `2px solid ${form[t.key] ? C.orange : theme.border}`, borderRadius: 12, padding: "12px 14px", cursor: "pointer", background: form[t.key] ? C.orangeDim : "transparent" }}>
                       <div style={{ fontWeight: 600, fontSize: 13, color: theme.text }}>{t.label}</div>
                       <div style={{ fontSize: 11, color: theme.sub }}>{t.desc}</div>
@@ -946,7 +1058,7 @@ function CreateShipment({ nav, theme, dark, auth, createShipmentApi, onRefresh, 
                   <div key={t.id} onClick={() => up("tier", t.id)} style={{ border: `2px solid ${form.tier === t.id ? C.green : theme.border}`, borderRadius: 14, padding: "16px 20px", cursor: "pointer", background: form.tier === t.id ? C.greenDim : "transparent", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div>
                       <div style={{ fontWeight: 700, fontSize: 15, color: theme.text }}>{t.label}</div>
-                      <div style={{ fontSize: 13, color: theme.sub }}>⏱ {t.time} · {t.desc}</div>
+                      <div style={{ fontSize: 13, color: theme.sub }}>â± {t.time} Â· {t.desc}</div>
                     </div>
                     <div style={{ fontWeight: 700, fontSize: 18, color: form.tier === t.id ? C.green : theme.text }}>KES {t.price}</div>
                   </div>
@@ -997,10 +1109,10 @@ function CreateShipment({ nav, theme, dark, auth, createShipmentApi, onRefresh, 
           {/* NAV BUTTONS */}
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 28 }}>
             <Btn variant="outlined" theme={theme} onClick={() => step > 1 ? setStep(s => s - 1) : nav("dashboard")}>
-              {step > 1 ? "← Back" : "Cancel"}
+              {step > 1 ? "â† Back" : "Cancel"}
             </Btn>
             <Btn variant="primary" theme={theme} onClick={() => step < 4 ? setStep(s => s + 1) : submitShipment()} large disabled={creating}>
-              {step === 4 ? creating ? "Creating…" : "Confirm & Create Shipment ✓" : `Next: ${steps[step]} →`}
+              {step === 4 ? creating ? "Creatingâ€¦" : "Confirm & Create Shipment âœ“" : `Next: ${steps[step]} â†’`}
             </Btn>
           </div>
         </div>
@@ -1009,9 +1121,9 @@ function CreateShipment({ nav, theme, dark, auth, createShipmentApi, onRefresh, 
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // LIVE TRACKING PAGE
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function TrackParcel({ nav, theme, dark, code: initialCode, onTrack, trackResult, setTrackResult, trackingError, setTrackingError }) {
   const [code, setCode] = useState(initialCode || "SWP-2025-847291");
   const [searching, setSearching] = useState(false);
@@ -1043,7 +1155,7 @@ function TrackParcel({ nav, theme, dark, code: initialCode, onTrack, trackResult
   const steps = [
     { label: "Order Created", time: "10:02 AM", desc: "Your order was received by Zawadi Boutique", done: true },
     { label: "Picked Up", time: "11:15 AM", desc: "Rider Kamau collected your parcel from the sorting hub", done: true },
-    { label: "In Transit", time: "Live", desc: `Your parcel is ${Math.round((100 - progress) * 0.03 + 1.2).toFixed(1)}km away — arriving in ~${Math.round((100 - progress) * 0.5 + 5)} min`, done: false, active: true },
+    { label: "In Transit", time: "Live", desc: `Your parcel is ${Math.round((100 - progress) * 0.03 + 1.2).toFixed(1)}km away â€” arriving in ~${Math.round((100 - progress) * 0.5 + 5)} min`, done: false, active: true },
     { label: "Delivered", time: "~2:45 PM", desc: "Estimated delivery to your door", done: false },
   ];
 
@@ -1055,7 +1167,7 @@ function TrackParcel({ nav, theme, dark, code: initialCode, onTrack, trackResult
           <div style={{ width: 30, height: 30, borderRadius: 8, background: C.green, display: "flex", alignItems: "center", justifyContent: "center" }}><Navigation size={16} color="#fff" /></div>
           <span style={{ fontWeight: 700, fontSize: 17, color: "#fff" }}>Swift<span style={{ color: C.green }}>Path</span></span>
         </div>
-        <button onClick={() => nav("landing")} style={{ background: "none", border: "1px solid rgba(255,255,255,.2)", borderRadius: 8, padding: "6px 14px", color: "#fff", fontSize: 13, cursor: "pointer" }}>← Home</button>
+        <button onClick={() => nav("landing")} style={{ background: "none", border: "1px solid rgba(255,255,255,.2)", borderRadius: 8, padding: "6px 14px", color: "#fff", fontSize: 13, cursor: "pointer" }}>â† Home</button>
       </div>
 
       <div style={{ maxWidth: 1000, margin: "0 auto", padding: 24 }}>
@@ -1071,7 +1183,7 @@ function TrackParcel({ nav, theme, dark, code: initialCode, onTrack, trackResult
 
         {tracked && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-            {/* LEFT — TIMELINE */}
+            {/* LEFT â€” TIMELINE */}
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               {/* TRACKING NUMBER */}
               <div style={{ background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 16, padding: 20 }}>
@@ -1126,7 +1238,7 @@ function TrackParcel({ nav, theme, dark, code: initialCode, onTrack, trackResult
                   { label: "Geo Address", value: trackResult.customer?.geoAddress || "N/A" },
                   { label: "Status", value: trackResult.status || "N/A" },
                   { label: "ETA", value: trackResult.eta || "TBD" },
-                  { label: "Rider", value: `${trackResult.rider?.name || "Unknown"} · ⭐ ${trackResult.rider?.rating || "-"}` },
+                  { label: "Rider", value: `${trackResult.rider?.name || "Unknown"} Â· â­ ${trackResult.rider?.rating || "-"}` },
                 ] : [
                   { label: "Item", value: "N/A" },
                   { label: "Status", value: "N/A" },
@@ -1156,11 +1268,11 @@ function TrackParcel({ nav, theme, dark, code: initialCode, onTrack, trackResult
               </div>
             </div>
 
-            {/* RIGHT — MAP */}
+            {/* RIGHT â€” MAP */}
             <div style={{ background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 16, overflow: "hidden", height: "fit-content" }}>
               <div style={{ padding: "14px 16px", borderBottom: `1px solid ${theme.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontWeight: 600, color: theme.text }}>Live Location</span>
-                <span style={{ fontSize: 12, color: C.green, fontWeight: 600 }}>● Updating live</span>
+                <span style={{ fontSize: 12, color: C.green, fontWeight: 600 }}>â— Updating live</span>
               </div>
               <TrackingMapSVG dark={dark} progress={progress} />
               <div style={{ padding: "12px 16px", background: dark ? "#0A1A2E" : "#F0FDF4", display: "flex", alignItems: "center", gap: 10 }}>
@@ -1176,9 +1288,9 @@ function TrackParcel({ nav, theme, dark, code: initialCode, onTrack, trackResult
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // PATA POINT PORTAL
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function PataPointPortal({ nav, theme, dark, auth, pataPoints, onCollect, busy }) {
   const [parcelList, setParcelList] = useState(flattenPataPoints(pataPoints));
   const [showNotif, setShowNotif] = useState(true);
@@ -1213,7 +1325,7 @@ function PataPointPortal({ nav, theme, dark, auth, pataPoints, onCollect, busy }
       <div style={{ background: dark ? "#060F1E" : C.navy, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button onClick={() => nav("dashboard")} style={{ background: "none", border: `1px solid rgba(255,255,255,.25)`, borderRadius: 10, padding: "8px 10px", color: "#fff", cursor: "pointer", fontSize: 13 }}>
-            ← Dashboard
+            â† Dashboard
           </button>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1237,7 +1349,7 @@ function PataPointPortal({ nav, theme, dark, auth, pataPoints, onCollect, busy }
         <div style={{ background: C.orange, padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <Bell size={16} color="#fff" />
-            <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>🆕 New parcel arrived for James Mwangi (SWP-2025-445566)</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>ðŸ†• New parcel arrived for James Mwangi (SWP-2025-445566)</span>
           </div>
           <button onClick={() => setShowNotif(false)} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer" }}><X size={16} /></button>
         </div>
@@ -1283,8 +1395,8 @@ function PataPointPortal({ nav, theme, dark, auth, pataPoints, onCollect, busy }
                     <a href={`tel:${p.phone}`} style={{ textDecoration: "none" }}>
                       <span style={{ fontSize: 13, color: C.green, display: "flex", alignItems: "center", gap: 4 }}><Phone size={12} /> {p.phone}</span>
                     </a>
-                    <span style={{ fontSize: 13, color: theme.sub }}>⏱ Arrived: {p.arrived}</span>
-                    <span style={{ fontSize: 13, color: theme.sub }}>📍 {p.pointName}</span>
+                    <span style={{ fontSize: 13, color: theme.sub }}>â± Arrived: {p.arrived}</span>
+                    <span style={{ fontSize: 13, color: theme.sub }}>ðŸ“ {p.pointName}</span>
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -1313,7 +1425,7 @@ function PataPointPortal({ nav, theme, dark, auth, pataPoints, onCollect, busy }
                 <div style={{ width: 36, height: 36, borderRadius: "50%", background: C.greenDim, display: "flex", alignItems: "center", justifyContent: "center" }}><CheckCircle size={18} color={C.green} /></div>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: 14, color: theme.text }}>{d.customer}</div>
-                  <div style={{ fontSize: 12, color: theme.sub }}>{d.id.slice(-6)} · {d.arrived}</div>
+                  <div style={{ fontSize: 12, color: theme.sub }}>{d.id.slice(-6)} Â· {d.arrived}</div>
                 </div>
               </div>
               <span style={{ background: C.greenDim, color: C.green, fontWeight: 700, fontSize: 14, padding: "4px 12px", borderRadius: 100 }}>Collected</span>
@@ -1327,9 +1439,9 @@ function PataPointPortal({ nav, theme, dark, auth, pataPoints, onCollect, busy }
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // ANALYTICS
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Analytics({ nav, theme, dark, setDark, auth, analyticsData, busy }) {
   const [range, setRange] = useState("30");
   const [volumeData, setVolumeData] = useState(analyticsData.volume || []);
@@ -1387,7 +1499,7 @@ function Analytics({ nav, theme, dark, setDark, auth, analyticsData, busy }) {
         <div style={{ background: theme.card, borderBottom: `1px solid ${theme.border}`, padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button onClick={() => nav("dashboard")} style={{ background: "none", border: `1px solid ${theme.border}`, borderRadius: 10, padding: "8px 10px", color: theme.sub, cursor: "pointer", fontSize: 13 }}>
-              ← Back
+              â† Back
             </button>
             <h1 style={{ fontSize: 18, fontWeight: 700, color: theme.text }}>Analytics</h1>
           </div>
@@ -1554,9 +1666,9 @@ function Analytics({ nav, theme, dark, setDark, auth, analyticsData, busy }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // SVG MAP COMPONENTS
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function NairobiMapVisual({ dark }) {
   const [tick, setTick] = useState(0);
   useEffect(() => { const t = setInterval(() => setTick(x => x + 1), 1200); return () => clearInterval(t); }, []);
@@ -1595,7 +1707,7 @@ function NairobiMapVisual({ dark }) {
           <g key={i}>
             <circle cx={d.x} cy={d.y} r="10" fill={C.orange} fillOpacity="0.15" />
             <circle cx={d.x} cy={d.y} r="6" fill={C.orange} />
-            <text x={d.x} y={d.y + 4} textAnchor="middle" fontSize="7" fill="#fff">🛵</text>
+            <text x={d.x} y={d.y + 4} textAnchor="middle" fontSize="7" fill="#fff">ðŸ›µ</text>
           </g>
         ))}
         {/* Center label */}
@@ -1630,7 +1742,7 @@ function DashboardMapSVG({ dark }) {
         <g key={i}>
           <circle cx={r.x} cy={r.y} r="12" fill={C.orange} fillOpacity="0.15" />
           <circle cx={r.x} cy={r.y} r="7" fill={C.orange} />
-          <text x={r.x} y={r.y + 3} textAnchor="middle" fontSize="8" fill="#fff">🛵</text>
+          <text x={r.x} y={r.y + 3} textAnchor="middle" fontSize="8" fill="#fff">ðŸ›µ</text>
         </g>
       ))}
       {[{x:120,y:160},{x:240,y:90},{x:380,y:180},{x:460,y:120},{x:180,y:210}].map((p,i) => (
@@ -1660,18 +1772,18 @@ function TrackingMapSVG({ dark, progress }) {
       {/* Rider */}
       <circle cx={riderX} cy={riderY} r="16" fill={C.orange} fillOpacity="0.2" />
       <circle cx={riderX} cy={riderY} r="10" fill={C.orange} />
-      <text x={riderX} y={riderY + 4} textAnchor="middle" fontSize="11" fill="#fff">🛵</text>
+      <text x={riderX} y={riderY + 4} textAnchor="middle" fontSize="11" fill="#fff">ðŸ›µ</text>
       {/* Destination */}
       <circle cx="380" cy="120" r="14" fill={C.green} fillOpacity="0.2" />
       <circle cx="380" cy="120" r="8" fill={C.green} />
-      <text x="380" y="124" textAnchor="middle" fontSize="10" fill="#fff">🏠</text>
+      <text x="380" y="124" textAnchor="middle" fontSize="10" fill="#fff">ðŸ </text>
       {/* ETA badge */}
       <rect x="310" y="70" width="130" height="32" rx="8" fill={C.green} />
       <text x="375" y="91" textAnchor="middle" fontSize="12" fontWeight="700" fill="#fff">~{Math.round((100 - progress) * 0.5 + 5)} min away</text>
       {/* Origin */}
       <circle cx="100" cy="200" r="8" fill="#7A9BB5" />
-      <text x="100" y="204" textAnchor="middle" fontSize="9" fill="#fff">📦</text>
-      <text x="290" y="170" textAnchor="middle" fontSize="10" fontWeight="600" fill={dark ? "#7ABBD4" : "#1A3A5C"} opacity="0.7">KILIMANI → WESTLANDS</text>
+      <text x="100" y="204" textAnchor="middle" fontSize="9" fill="#fff">ðŸ“¦</text>
+      <text x="290" y="170" textAnchor="middle" fontSize="10" fontWeight="600" fill={dark ? "#7ABBD4" : "#1A3A5C"} opacity="0.7">KILIMANI â†’ WESTLANDS</text>
     </svg>
   );
 }
@@ -1704,9 +1816,9 @@ function CoverageMapSVG({ dark }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // REUSABLE UI COMPONENTS
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Btn({ children, variant = "primary", onClick, theme, small, large, style = {} }) {
   const base = {
     display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -1743,3 +1855,5 @@ function FormField({ label, value, onChange, placeholder, theme, type = "text", 
     </div>
   );
 }
+
+

@@ -19,6 +19,15 @@ export async function loginUser(email, password) {
   return checkResponse(response);
 }
 
+export async function registerUser(name, email, password) {
+  const response = await fetch(`${API_URL}/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, email, password })
+  });
+  return checkResponse(response);
+}
+
 export async function fetchMe(token) {
   const response = await fetch(`${API_URL}/auth/me`, {
     headers: { Authorization: `Bearer ${token}` }

@@ -1,47 +1,54 @@
 import express from "express";
-import { users } from "../data.js";
+import { findUserByEmail, createUser, findUserById } from "../db.js";
 import { authenticate, signToken } from "../middleware/auth.js";
+import bcrypt from "bcryptjs";
+import { nanoid } from "nanoid";
 
 const router = express.Router();
 
-router.post("/login", (req, res) => {
+router.post("/login", async (req, res) => {
   const { email, password } = req.body;
-  const user = users.find(u => u.email === email && u.password === password);
-  if (!user) {
-    return res.status(401).json({ message: "Invalid credentials" });
-  }
+  if (!email || !password) return res.status(400).json({ message: "Missing credentials" });
+
+  const user = await findUserByEmail(email);
+  if (!user) return res.status(401).json({ message: "Invalid credentials" });
+
+  const ok = await bcrypt.compare(password, user.password);
+  if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 
   const token = signToken(user);
   const { password: _, ...payload } = user;
   res.json({ user: payload, token });
 });
 
-router.post("/register", (req, res) => {
+router.post("/register", async (req, res) => {
   const { email, password, name } = req.body;
   if (!email || !password || !name) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
-  if (users.some(u => u.email === email)) {
+  if (await findUserByEmail(email)) {
     return res.status(409).json({ message: "Email already registered" });
   }
 
+  const hashed = await bcrypt.hash(password, 10);
   const newUser = {
-    id: `merchant_${users.length + 1}`,
+    id: `merchant_${nanoid(8)}`,
     email,
-    password,
+    password: hashed,
     name,
     role: "merchant"
   };
-  users.push(newUser);
+
+  await createUser(newUser);
 
   const token = signToken(newUser);
   const { password: _, ...payload } = newUser;
   res.status(201).json({ user: payload, token });
 });
 
-router.get("/me", authenticate, (req, res) => {
-  const user = users.find(u => u.id === req.user.id);
+router.get("/me", authenticate, async (req, res) => {
+  const user = await findUserById(req.user.id);
   if (!user) return res.status(404).json({ message: "User not found" });
   const { password: _, ...payload } = user;
   res.json({ user: payload });
