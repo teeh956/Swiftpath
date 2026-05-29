@@ -11,9 +11,19 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const FRONTEND_URLS = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",") : ["http://localhost:5173", "http://127.0.0.1:5173"];
-
-app.use(cors({ origin: FRONTEND_URLS, credentials: true }));
+const FRONTEND_URLS = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",") : ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3003", "http://localhost:3004", "http://localhost:5173"];
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin || origin.startsWith("http://localhost") || origin.startsWith("http://127.0.0.1")) {
+      callback(null, true);
+    } else {
+      const allowed = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(",") : [];
+      if (allowed.includes(origin)) callback(null, true);
+      else callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
 
 app.get("/", (req, res) => {
